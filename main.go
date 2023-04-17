@@ -5,11 +5,13 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"time"
 
 	"github.com/spf13/cast"
 
 	"github.com/l3lackShark/gosumemory/config"
 
+	"github.com/l3lackShark/gosumemory/db"
 	"github.com/l3lackShark/gosumemory/mem"
 	"github.com/l3lackShark/gosumemory/memory"
 	"github.com/l3lackShark/gosumemory/pp"
@@ -46,12 +48,13 @@ func main() {
 	}
 
 	go memory.Init()
-	// err := db.InitDB()
-	// if err != nil {
-	// 	log.Println(err)
-	// 	time.Sleep(5 * time.Second)
-	// 	os.Exit(1)
-	// }
+	go db.InitOSRWriting()
+	err := db.InitDB()
+	if err != nil {
+		log.Println(err)
+		time.Sleep(5 * time.Second)
+		os.Exit(1)
+	}
 	go web.SetupStructure()
 	go web.SetupRoutes()
 	if !cgo {

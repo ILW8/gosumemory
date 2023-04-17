@@ -148,4 +148,8 @@ type gameplayD struct {
 	Accuracy            float64 `mem:"[[Ruleset + 0x68] + 0x48] + 0xC"`
 	LeaderBoard         uint32  `mem:"[Ruleset + 0x7C] + 0x24"`
 	KeyOverlayArrayAddr uint32  `mem:"[[Ruleset + 0xB0] + 0x10] + 0x4"` //has to be at the end due to mem not liking dead pointers, TODO: Fix this mem-side
+	IsFailed            int8    `mem:"[Base - 0x33] + 0x1C"`            //bool
+	ReplayDataBase      uint32  `mem:"[[Ruleset + 0x68] + 0x38] + 0x34"`
+	ReplayFailTime      int32   `mem:"[[Ruleset + 0x68] + 0x38] + 0x74"`
+	DateTime            int64   `mem:"[[Ruleset + 0x68] + 0x38] + 0x6C"`
 }

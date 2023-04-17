@@ -130,6 +130,9 @@ type GameplayValues struct {
 	PP          ppG         `json:"pp"`
 	KeyOverlay  keyOverlay  `json:"keyOverlay"`
 	Leaderboard leaderboard `json:"leaderboard"`
+	IsFailed    int8        `json:"isFailed"`
+	FailTime    int32       `json:"-"`
+	Replay      ReplayArray `json:"-"`
 }
 
 type keyOverlay struct {

@@ -250,6 +250,11 @@ func getGamplayData() {
 		return //struct not initialized yet
 	}
 	//GameplayData.BitwiseKeypress = gameplayData.BitwiseKeypress
+	GameplayData.IsFailed = gameplayData.IsFailed
+	if gameplayData.IsFailed == 1 {
+		GameplayData.Replay, _ = readOSREntries()
+	}
+	GameplayData.FailTime = gameplayData.ReplayFailTime
 	GameplayData.Combo.Current = gameplayData.Combo
 	GameplayData.Combo.Max = gameplayData.MaxCombo
 	GameplayData.GameMode = gameplayData.Mode
@@ -456,4 +461,50 @@ func getKeyOveraly() {
 	out.M2.IsPressed = cast.ToBool(int(entries.M2Pressed))
 	out.M2.Count = entries.M2Count
 	GameplayData.KeyOverlay = out //needs complete rewrite in 1.4.0
+}
+
+type ReplayArray struct {
+	Replays []OSREntry
+}
+
+type OSREntry struct {
+	X                float32
+	Y                float32
+	WasButtonPressed int8 //Bitwise combination of keys/mouse buttons (0 - no keypress)
+	Time             int32
+}
+
+func readOSREntries() (ReplayArray, error) {
+	items, err := mem.ReadInt32(process, int64(gameplayData.ReplayDataBase)+0xC)
+	if err != nil {
+		return ReplayArray{}, err
+	}
+	if items < 1 {
+		return ReplayArray{}, errors.New("invalid struct or empty array")
+	}
+	arraysBase, err := mem.ReadInt32(process, int64(gameplayData.ReplayDataBase)+0x4, 0)
+	if err != nil {
+		return ReplayArray{}, err
+	}
+	var osr ReplayArray
+
+	osr.Replays = make([]OSREntry, items)
+	for i, j := 0x8, 0; j < int(items); i, j = i+0x4, j+1 {
+		ourArray, err := mem.ReadUint32(process, int64(arraysBase)+int64(i), 0)
+		if err != nil {
+			return ReplayArray{}, err
+		}
+		x, _ := mem.ReadFloat32(process, int64(ourArray)+0x4, 0)
+		y, _ := mem.ReadFloat32(process, int64(ourArray)+0x8, 0)
+		wasButtonPressed, err := mem.ReadInt8(process, int64(ourArray)+0xC, 0)
+		time, _ := mem.ReadInt32(process, int64(ourArray)+0x10, 0)
+
+		osr.Replays[j] = OSREntry{
+			x,
+			y,
+			wasButtonPressed,
+			time,
+		}
+	}
+	return osr, nil
 }

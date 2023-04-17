@@ -15,7 +15,6 @@ You can contact us here: https://discord.gg/8enr4qD
 [![Mathi](https://img.shields.io/badge/Mathi%20v1.5---?style=for-the-badge&color=4981CE)](https://mega.nz/file/5dsk1QJD#noUKykU5qJYv53I2DPZ7PY2CIQOftS1ufqzOh4rqOb8)
 [![RyuK](https://img.shields.io/badge/RyuK%20v1.0---?style=for-the-badge&color=f72f4d)](https://mega.nz/file/dY8k1YyZ#1Phdta1CzxXDotjtllUKsZunnCdliYlQ1VrZ_BNaNIs)
 
-
 # Usage
      
 1. [Download the latest Release](https://github.com/l3lackShark/gosumemory/releases/latest)
