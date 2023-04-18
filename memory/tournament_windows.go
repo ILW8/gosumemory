@@ -86,11 +86,25 @@ func resolveTourneyClients(procs []mem.Process) ([]mem.Process, error) {
 	return tourneyClients, nil
 }
 
+var lastIndex = 0
+
 func getTourneyGameplayData(proc mem.Process, iterator int) {
 	err := mem.Read(proc, &tourneyPatterns[iterator], &tourneyGameplayData[iterator])
 	if err != nil && !strings.Contains(err.Error(), "LeaderBoard") && !strings.Contains(err.Error(), "KeyOverlay") { //TODO: fix this mem-side
 		return //struct not initialized yet
 	}
+	replayArray, err := readOSREntriesOfProc(proc, tourneyGameplayData[iterator].ReplayDataBase)
+	if err != nil {
+		fmt.Println("something went wrong")
+		fmt.Println(err)
+	} else {
+		//fmt.Printf("[%d] %d\n", iterator, len(replayArray.Replays))
+		for OSREntryIndex := lastIndex; OSREntryIndex < len(replayArray.Replays); OSREntryIndex++ {
+			entry := replayArray.Replays[OSREntryIndex]
+			fmt.Printf("[%d:%d] x: %8.4f | y: %8.4f | keys: %4s\n", iterator, entry.Time, entry.X, entry.Y, strconv.FormatInt(int64(entry.WasButtonPressed), 2))
+		}
+	}
+	lastIndex = len(replayArray.Replays) - 1
 	TourneyData.IPCClients[iterator].Gameplay.Combo.Current = tourneyGameplayData[iterator].Combo
 	TourneyData.IPCClients[iterator].Gameplay.Combo.Max = tourneyGameplayData[iterator].MaxCombo
 	TourneyData.IPCClients[iterator].Gameplay.GameMode = tourneyGameplayData[iterator].Mode

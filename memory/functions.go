@@ -474,15 +474,15 @@ type OSREntry struct {
 	Time             int32
 }
 
-func readOSREntries() (ReplayArray, error) {
-	items, err := mem.ReadInt32(process, int64(gameplayData.ReplayDataBase)+0xC)
+func readOSREntriesOfProc(processToRead mem.Process, ReplayDataBase uint32) (ReplayArray, error) {
+	items, err := mem.ReadInt32(processToRead, int64(ReplayDataBase)+0xC)
 	if err != nil {
 		return ReplayArray{}, err
 	}
 	if items < 1 {
 		return ReplayArray{}, errors.New("invalid struct or empty array")
 	}
-	arraysBase, err := mem.ReadInt32(process, int64(gameplayData.ReplayDataBase)+0x4, 0)
+	arraysBase, err := mem.ReadInt32(processToRead, int64(ReplayDataBase)+0x4, 0)
 	if err != nil {
 		return ReplayArray{}, err
 	}
@@ -490,14 +490,14 @@ func readOSREntries() (ReplayArray, error) {
 
 	osr.Replays = make([]OSREntry, items)
 	for i, j := 0x8, 0; j < int(items); i, j = i+0x4, j+1 {
-		ourArray, err := mem.ReadUint32(process, int64(arraysBase)+int64(i), 0)
+		ourArray, err := mem.ReadUint32(processToRead, int64(arraysBase)+int64(i), 0)
 		if err != nil {
 			return ReplayArray{}, err
 		}
-		x, _ := mem.ReadFloat32(process, int64(ourArray)+0x4, 0)
-		y, _ := mem.ReadFloat32(process, int64(ourArray)+0x8, 0)
-		wasButtonPressed, err := mem.ReadInt8(process, int64(ourArray)+0xC, 0)
-		time, _ := mem.ReadInt32(process, int64(ourArray)+0x10, 0)
+		x, _ := mem.ReadFloat32(processToRead, int64(ourArray)+0x4, 0)
+		y, _ := mem.ReadFloat32(processToRead, int64(ourArray)+0x8, 0)
+		wasButtonPressed, err := mem.ReadInt8(processToRead, int64(ourArray)+0xC, 0)
+		time, _ := mem.ReadInt32(processToRead, int64(ourArray)+0x10, 0)
 
 		osr.Replays[j] = OSREntry{
 			x,
@@ -507,4 +507,8 @@ func readOSREntries() (ReplayArray, error) {
 		}
 	}
 	return osr, nil
+}
+
+func readOSREntries() (ReplayArray, error) {
+	return readOSREntriesOfProc(process, gameplayData.ReplayDataBase)
 }
