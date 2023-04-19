@@ -120,19 +120,20 @@ type gGrade struct {
 
 //GameplayValues inside osu!memory
 type GameplayValues struct {
-	GameMode    int32       `json:"gameMode"`
-	Name        string      `json:"name"`
-	Score       int32       `json:"score"`
-	Accuracy    float64     `json:"accuracy"`
-	Combo       combo       `json:"combo"`
-	Hp          hp          `json:"hp"`
-	Hits        hits        `json:"hits"`
-	PP          ppG         `json:"pp"`
-	KeyOverlay  keyOverlay  `json:"keyOverlay"`
-	Leaderboard leaderboard `json:"leaderboard"`
-	IsFailed    int8        `json:"isFailed"`
-	FailTime    int32       `json:"-"`
-	Replay      ReplayArray `json:"-"`
+	GameMode             int32       `json:"gameMode"`
+	Name                 string      `json:"name"`
+	Score                int32       `json:"score"`
+	Accuracy             float64     `json:"accuracy"`
+	Combo                combo       `json:"combo"`
+	Hp                   hp          `json:"hp"`
+	Hits                 hits        `json:"hits"`
+	PP                   ppG         `json:"pp"`
+	KeyOverlay           keyOverlay  `json:"keyOverlay"`
+	Leaderboard          leaderboard `json:"leaderboard"`
+	IsFailed             int8        `json:"isFailed"`
+	FailTime             int32       `json:"-"`
+	Replay               ReplayArray `json:"recentCursorPositions"`
+	LatestCursorPosition OSREntry    `json:"cursorPosition"`
 }
 
 type keyOverlay struct {

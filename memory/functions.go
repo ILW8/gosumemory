@@ -22,6 +22,8 @@ func modsResolver(xor uint32) string {
 
 //UpdateTime Intervall between value updates
 var UpdateTime int
+var LastReplayTime int32 = 0
+var lastReplayIndex = 0
 
 //UnderWine?
 var UnderWine bool
@@ -254,6 +256,34 @@ func getGamplayData() {
 	if gameplayData.IsFailed == 1 {
 		GameplayData.Replay, _ = readOSREntries()
 	}
+	replayArray, err := readOSREntries()
+	if !(err != nil) {
+		for {
+			if len(replayArray.Replays) <= 0 {
+				break
+			}
+			lastEntry := replayArray.Replays[len(replayArray.Replays)-1]
+			startIndex := len(replayArray.Replays) - 1
+			for ; startIndex > 0; startIndex-- {
+				if lastEntry.Time-replayArray.Replays[startIndex].Time > 1000 {
+					break
+				}
+			}
+			//if lastEntry.Time < LastReplayTime {
+			//	LastReplayTime = lastEntry.Time
+			//	lastReplayIndex = len(replayArray.Replays) - 1
+			//	break
+			//}
+			//
+			a := ReplayArray{Replays: replayArray.Replays[startIndex:]}
+			GameplayData.Replay = a
+			GameplayData.LatestCursorPosition = lastEntry
+
+			//lastReplayIndex = len(replayArray.Replays) - 1
+			break
+		}
+
+	}
 	GameplayData.FailTime = gameplayData.ReplayFailTime
 	GameplayData.Combo.Current = gameplayData.Combo
 	GameplayData.Combo.Max = gameplayData.MaxCombo
@@ -300,6 +330,13 @@ func getGamplayData() {
 	}
 	getLeaderboard()
 	getKeyOveraly()
+	//replayArray, err := readOSREntries()
+	//if err != nil {
+	//	return
+	//}
+	//entry := replayArray.Replays[len(replayArray.Replays)-1]
+	//fmt.Printf("[%d] x: %8.4f | y: %8.4f | keys: %4s\n", entry.Time, entry.X, entry.Y, strconv.FormatInt(int64(entry.WasButtonPressed), 2))
+
 }
 
 func getLeaderboard() {
@@ -488,23 +525,36 @@ func readOSREntriesOfProc(processToRead mem.Process, ReplayDataBase uint32) (Rep
 	}
 	var osr ReplayArray
 
-	osr.Replays = make([]OSREntry, items)
-	for i, j := 0x8, 0; j < int(items); i, j = i+0x4, j+1 {
-		ourArray, err := mem.ReadUint32(processToRead, int64(arraysBase)+int64(i), 0)
+	if items > 1 { // avoid reading the last entry, may have data race condition
+		items = items - 1
+	}
+
+	//osr.Replays = make([]OSREntry, items)
+	osr.Replays = []OSREntry{}
+	for entryIndex := 0; entryIndex < int(items); entryIndex = entryIndex + 1 {
+		ourArray, err := mem.ReadUint32(processToRead, int64(arraysBase)+int64(0x4*entryIndex+0x8), 0)
 		if err != nil {
 			return ReplayArray{}, err
 		}
+
+		entryTime, _ := mem.ReadInt32(processToRead, int64(ourArray)+0x10, 0)
+		if entryTime == 0 {
+			continue
+		}
+
 		x, _ := mem.ReadFloat32(processToRead, int64(ourArray)+0x4, 0)
 		y, _ := mem.ReadFloat32(processToRead, int64(ourArray)+0x8, 0)
+		if math.IsNaN(float64(x)) || math.IsNaN(float64(y)) || x == 0 || y == 0 {
+			continue
+		}
 		wasButtonPressed, err := mem.ReadInt8(processToRead, int64(ourArray)+0xC, 0)
-		time, _ := mem.ReadInt32(processToRead, int64(ourArray)+0x10, 0)
 
-		osr.Replays[j] = OSREntry{
+		osr.Replays = append(osr.Replays, OSREntry{
 			x,
 			y,
 			wasButtonPressed,
-			time,
-		}
+			entryTime,
+		})
 	}
 	return osr, nil
 }
