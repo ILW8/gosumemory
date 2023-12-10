@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/l3lackShark/gosumemory/config"
 	"log"
 	"os"
 	"path/filepath"
@@ -249,6 +250,10 @@ func getTourneyIPC() error {
 }
 
 func readChatData(base *int64) (result []tourneyMessage, err error) {
+	var skipMpCommand = cast.ToBool(config.Config["chatSkipMpCommands"])
+	if config.Config["chatSkipMpCommands"] == "" {
+		skipMpCommand = true
+	}
 	addresses := struct{ Base int64 }{*base}
 	var data struct {
 		Tabs uint32 `mem:"[Base + 0x1C] + 0x4"`
@@ -285,7 +290,7 @@ func readChatData(base *int64) (result []tourneyMessage, err error) {
 				Content  string `mem:"[Base + 0x4]"`
 			}
 			err = mem.Read(process, &msgAddrs, &chatContent)
-			if chatContent.Content == "" || strings.HasPrefix(chatContent.Content, "!mp") {
+			if chatContent.Content == "" || (skipMpCommand && strings.HasPrefix(chatContent.Content, "!mp")) {
 				continue
 			}
 			spl := strings.SplitAfterN(chatContent.TimeName, " ", 2)
