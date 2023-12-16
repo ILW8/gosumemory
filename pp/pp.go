@@ -223,7 +223,7 @@ func readData(data *PP, ez C.ezpp_t, needStrain bool, path string) error {
 	return nil
 }
 
-var maniaSR float64
+var SR float64
 var maniaHitObjects float64
 var tempMods string
 
@@ -252,6 +252,21 @@ func GetData() {
 					}
 					//Get Strains
 					readData(&data, ez, true, path)
+
+					// use in-game star rating
+					stars, err := memory.ReadStars(0)
+					if err != nil {
+						pp.Println(err)
+					}
+					if strings.Contains(memory.MenuData.Mods.PpMods, "DT") {
+						SR = stars.DT
+					} else if strings.Contains(memory.MenuData.Mods.PpMods, "HT") {
+						SR = stars.HT
+					} else {
+						SR = stars.NoMod //assuming NM
+					}
+					memory.MenuData.Bm.Stats.BeatmapSR = cast.ToFloat32(fmt.Sprintf("%.2f", float32(SR)))
+					memory.MenuData.Bm.Stats.FullSR = memory.MenuData.Bm.Stats.BeatmapSR
 
 					//pp.Println(memory.MenuData.Bm.Metadata)
 				}
@@ -288,7 +303,7 @@ func GetData() {
 					tempBeatmapFile = memory.MenuData.Bm.Path.BeatmapOsuFileString
 					tempMods = memory.MenuData.Mods.PpMods
 
-					maniaSR = 0.0
+					SR = 0.0
 					memory.MenuData.Bm.Time.FullTime = 0        //Not implemented for mania yet
 					memory.MenuData.Bm.Stats.BeatmapAR = 0      //Not implemented for mania yet
 					memory.MenuData.Bm.Stats.BeatmapCS = 0      //Not implemented for mania yet
@@ -296,13 +311,13 @@ func GetData() {
 					memory.MenuData.Bm.Stats.BeatmapHP = 0      //Not implemented for mania yet
 					memory.MenuData.PP.PpStrains = []float64{0} //Not implemented for mania yet
 
-					maniaStars, err := memory.ReadManiaStars()
+					maniaStars, err := memory.ReadStars(2)
 					if err != nil {
 						pp.Println(err)
 					}
 					if maniaStars.NoMod == 0 { //diff calc in progress
 						for i := 0; i < 50; i++ {
-							maniaStars, _ = memory.ReadManiaStars()
+							maniaStars, _ = memory.ReadStars(2)
 							if maniaStars.NoMod > 0 {
 								break
 							}
@@ -313,22 +328,22 @@ func GetData() {
 					maniaHitObjects = float64(memory.MenuData.Bm.Stats.TotalHitObjects)
 
 					if strings.Contains(memory.MenuData.Mods.PpMods, "DT") {
-						maniaSR = maniaStars.DT
+						SR = maniaStars.DT
 					} else if strings.Contains(memory.MenuData.Mods.PpMods, "HT") {
-						maniaSR = maniaStars.HT
+						SR = maniaStars.HT
 					} else {
-						maniaSR = maniaStars.NoMod //assuming NM
+						SR = maniaStars.NoMod //assuming NM
 					}
-					memory.MenuData.Bm.Stats.BeatmapSR = cast.ToFloat32(fmt.Sprintf("%.2f", float32(maniaSR)))
+					memory.MenuData.Bm.Stats.BeatmapSR = cast.ToFloat32(fmt.Sprintf("%.2f", float32(SR)))
 					memory.MenuData.Bm.Stats.FullSR = memory.MenuData.Bm.Stats.BeatmapSR
-					memory.MenuData.PP.PpSS = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), maniaSR, maniaHitObjects, 1000000.0)) // LiveSR not implemented yet
+					memory.MenuData.PP.PpSS = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), SR, maniaHitObjects, 1000000.0)) // LiveSR not implemented yet
 				}
 			}
 			if memory.GameplayData.GameMode == 3 {
-				if maniaSR > 0 {
-					memory.GameplayData.PP.PPifFC = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), maniaSR, maniaHitObjects, 1000000.0)) //PP if SS
+				if SR > 0 {
+					memory.GameplayData.PP.PPifFC = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), SR, maniaHitObjects, 1000000.0)) //PP if SS
 					if memory.GameplayData.Score >= 500000 {
-						memory.GameplayData.PP.Pp = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), maniaSR, maniaHitObjects, float64(memory.GameplayData.Score)))
+						memory.GameplayData.PP.Pp = int32(calculateManiaPP(float64(memory.MenuData.Bm.Stats.MemoryOD), SR, maniaHitObjects, float64(memory.GameplayData.Score)))
 					} else {
 						memory.GameplayData.PP.Pp = 0
 					}

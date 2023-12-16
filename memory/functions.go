@@ -322,33 +322,69 @@ func getLeaderboard() {
 	GameplayData.Leaderboard = board
 }
 
-type ManiaStars struct {
+type StarRatings struct {
 	NoMod float64
 	DT    float64
 	HT    float64
 }
 
-func ReadManiaStars() (ManiaStars, error) {
-	addresses := struct{ Base int64 }{int64(menuData.StarRatingStruct)} //Beatmap + 0x88
+func ReadStars(osuMode int) (StarRatings, error) {
+	var offset int64
+	if osuMode == 0 { // osu
+		offset = 0x08
+	} else if osuMode == 2 { // mania
+		offset = 0x14
+	} else {
+		return StarRatings{}, errors.New(fmt.Sprintf("mode %d not suppored", osuMode))
+	}
+
+	addresses := struct {
+		Base   int64
+		Offset int64
+	}{int64(menuData.StarRatingStruct), offset} //Beatmap + 0x88
 	var entries struct {
-		Data uint32 `mem:"[Base + 0x14] + 0x8"`
+		Data uint32 `mem:"[Base + Offset] + 0x8"`
 	}
 	err := mem.Read(process, &addresses, &entries)
 	if err != nil || entries.Data == 0 {
 		pp.Println("[MEMORY] Could not find star rating for this map or converts not supported yet")
-		return ManiaStars{}, nil
+		return StarRatings{}, nil
 	}
 	starRating := struct{ Base int64 }{int64(entries.Data)}
 	var stars struct {
 		NoMod float64 `mem:"Base + 0x18"`
+		A     float64 `mem:"Base + 0x18"`
+		B     float64 `mem:"Base + 0x1C"`
+		C     float64 `mem:"Base + 0x20"`
+		H     float64 `mem:"Base + 0x24"`
+		I     float64 `mem:"Base + 0x28"`
+		AA    float64 `mem:"Base + 0x2C"`
+		CAA   float64 `mem:"Base + 0x34"`
+		CAb   float64 `mem:"Base + 0x38"`
+		CAc   float64 `mem:"Base + 0x3C"`
+		CAd   float64 `mem:"Base + 0x40"`
+		CAe   float64 `mem:"Base + 0x44"`
+		CAf   float64 `mem:"Base + 0x48"`
+		CAg   float64 `mem:"Base + 0x4C"`
+		CAh   float64 `mem:"Base + 0x50"`
+		CAi   float64 `mem:"Base + 0x54"`
+		CAj   float64 `mem:"Base + 0x58"`
+		CAk   float64 `mem:"Base + 0x5C"`
+		CAl   float64 `mem:"Base + 0x60"`
+		D     float64 `mem:"Base + 0x14"`
+		E     float64 `mem:"Base + 0x10"`
+		F     float64 `mem:"Base + 0x0C"`
+		G     float64 `mem:"Base + 0x08"`
+		G1    float64 `mem:"Base + 0x04"`
+		G2    float64 `mem:"Base + 0x00"`
 		DT    float64 `mem:"Base + 0x30"`
 		HT    float64 `mem:"Base + 0x48"`
 	}
 	err = mem.Read(process, &starRating, &stars)
 	if err != nil {
-		return ManiaStars{}, errors.New("[MEMORY] Empty star rating (internal)")
+		return StarRatings{}, errors.New("[MEMORY] Empty star rating (internal)")
 	}
-	return ManiaStars{stars.NoMod, stars.DT, stars.HT}, nil
+	return StarRatings{stars.NoMod, stars.DT, stars.HT}, nil
 }
 
 func readLeaderPlayerStruct(base int64) (leaderPlayer, bool) {
